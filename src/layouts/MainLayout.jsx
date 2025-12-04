@@ -1,17 +1,29 @@
-import React from 'react'
-import { Outlet } from 'react-router-dom'
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import { Layout } from 'antd';
+import AppHeader from '../components/layout/Header'; // Import Header
+import AppFooter from '../components/layout/Footer'; // Import Footer
+
+const { Content } = Layout;
 
 const MainLayout = () => {
   return (
-    <div style={{minHeight: "100vh", display:"flex", flexDirection:"column"}}>
-        {/* Header sẽ thêm sau */}
-        <main style={{flex:1, padding:"20px", background:'#f0f2f5' }}>
-            {/* đây là nơi hiển thị HomePage, ProductPage,.... */}
-            <Outlet/>
-        </main>
-        {/* Footer sẽ thêm sau */}
-    </div>
-  )
-}
+    <Layout style={{ minHeight: "100vh" }}>
+      {/* 1. Header */}
+      <AppHeader />
 
-export default MainLayout
+      {/* 2. Nội dung chính (Thay đổi theo router) */}
+      <Content style={{ padding: '24px 50px', background: '#f0f2f5' }}>
+        {/* Container giúp nội dung không bị bè ra quá rộng trên màn hình lớn */}
+        <div style={{ maxWidth: '1200px', margin: '0 auto', minHeight: '80vh' }}>
+          <Outlet />
+        </div>
+      </Content>
+
+      {/* 3. Footer */}
+      <AppFooter />
+    </Layout>
+  );
+};
+
+export default MainLayout;
