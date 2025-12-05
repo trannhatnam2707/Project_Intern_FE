@@ -1,111 +1,192 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Menu, Button, Badge, Dropdown, Avatar, Space } from 'antd';
-import { ShoppingCartOutlined, UserOutlined, LogoutOutlined, DownOutlined, ShopOutlined } from '@ant-design/icons';
-import { useNavigate, Link } from 'react-router-dom';
+import { Layout, Menu, Button, Badge, Dropdown, Avatar, Space, Input, message } from 'antd';
+import { ShoppingCartOutlined, UserOutlined, LogoutOutlined, DownOutlined, ShopOutlined, AppstoreOutlined, HistoryOutlined } from '@ant-design/icons';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { logout } from '../../services/auth';
 
 const { Header } = Layout;
+const { Search } = Input;
 
 const AppHeader = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [user, setUser] = useState(null);
 
-    const navigate = useNavigate();
-    const [user, setUser] = useState(null)
+  // Lấy thông tin user
+  useEffect(() => {
+    const userStr = localStorage.getItem("user_info") || sessionStorage.getItem("user_info");
+    if (userStr) {
+      try {
+        setUser(JSON.parse(userStr));
+      } catch (e) {
+        console.error("Lỗi parse user info", e);
+      }
+    }
+  }, []);
 
-    const navItems = [
-        {key: "/", label: <Link to = "/">Trang chủ </Link>, icon: <ShopOutlined />},
-        {key: "/products", label: <Link to = "/products">Sản phẩm </Link>},
-        {key: "/orders", label: <Link to = "/orders">Đơn hàng</Link>},
-    ];
+  const onSearch = (value) => {
+    if (value.trim()) {
+      message.info(`Đang tìm kiếm: ${value}`);
+    }
+  };
 
-    useEffect(() => {
-        const userStr = localStorage.getItem("user_info") || sessionStorage.getItem("user_info")
-        if(userStr){
-            try{
-                setUser(JSON.parse(userStr));
-            }
-            catch(e)
-            {
-                console.error("Lỗi parse user info", e)
-            }
-        }
-    },[])
+  // Menu Dropdown của User
+  const userMenu = {
+    items: [
+      {
+        key: 'profile',
+        label: <Link to="/profile">Hồ sơ cá nhân</Link>,
+        icon: <UserOutlined />,
+      },
+      {
+        key: 'orders',
+        label: <Link to="/orders">Đơn hàng của tôi</Link>,
+        icon: <HistoryOutlined />,
+      },
+      { type: 'divider' },
+      {
+        key: 'logout',
+        label: 'Đăng xuất',
+        icon: <LogoutOutlined />,
+        danger: true,
+        onClick: logout,
+      },
+    ]
+  };
 
-        const userMenu = {
-        items: [
-        {
-            key: 'profile',
-            label: <Link to="/profile">Hồ sơ cá nhân</Link>,
-            icon: <UserOutlined />,
-        },
-        {
-            key: 'logout',
-            label: 'Đăng xuất',
-            icon: <LogoutOutlined />,
-            danger: true,
-            onClick: logout, // Gọi hàm logout từ service
-        },
-        ]
-    };
+  // Menu chính
+  const navItems = [
+    { 
+      key: '/', 
+      label: <Link to="/">Trang chủ</Link>, 
+      icon: <ShopOutlined /> 
+    },
+    {
+      key: 'products-submenu',
+      label: 'Danh Mục',
+      icon: <AppstoreOutlined />,
+      children: [
+        { key: '/products/laptops', label: <Link to="/products/laptops">Laptop</Link> },
+        { key: '/products/phones', label: <Link to="/products/phones">Điện thoại</Link> },
+        { key: '/products/watches', label: <Link to="/products/watches">Đồng hồ</Link> },
+        { key: '/products/watches', label: <Link to="/products/watches">Đồng hồ</Link> },
+        { key: '/products/watches', label: <Link to="/products/watches">Đồng hồ</Link> },
 
-    return (
-        <Header style={{ position: 'sticky',
-            top: 0,
-            zIndex: 1000,
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: '#fff',
-            boxShadow: '0 2px 8px #f0f1f2',
-            padding: '0 24px' 
-            }}
-        >
+      ],
+    },
+  ];
 
-            {/* LOGO */}
-            <div className="logo" style={{ marginRight: '40px', cursor: 'pointer' }} onClick={() => navigate('/')}>
-            <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#1890ff' }}>
-            Wehappi<span style={{ color: '#001529' }}>Tech</span>
-            </span>
-        </div>
+  return (
+    <Header
+      style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 1000,
+        width: '100%',
+        // 👇 1. Đổi màu nền sang xanh đen (#001529) cho giống Footer
+        background: '#001529',
+        // Thêm đường viền mờ bên dưới để tách biệt nếu body cùng màu tối (tùy chọn)
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)', 
+        padding: '0 24px',
+        height: '64px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '20px'
+      }}
+    >
+      {/* --- KHỐI 1: LOGO --- */}
+      <div 
+        className="logo" 
+        style={{ cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center' }} 
+        onClick={() => navigate('/')}
+      >
+        {/* 👇 2. Chữ "Wehappi" màu xanh sáng hơn (#40a9ff) để dễ nhìn trên nền tối */}
+        {/* 👇 3. Chữ "Tech" đổi thành màu Trắng (#fff) */}
+        <span style={{ fontSize: '24px', fontWeight: '800', color: '#40a9ff', lineHeight: 1 }}>
+          Wehappi<span style={{ color: '#fff' }}>Tech</span>
+        </span>
+      </div>
 
-            {/* MENU */}
-            <Menu
-                mode="horizontal"
-                defaultSelectedKeys={['/']}
-                items={navItems}
-                style={{ flex: 1, borderBottom: 'none', lineHeight: '64px' }}
-            />
+      {/* --- KHỐI 2: MENU --- */}
+      <div style={{ minWidth: '200px' }}>
+        <Menu
+          theme="dark" // 👈 4. Quan trọng: Chế độ tối giúp chữ tự động thành màu trắng
+          mode="horizontal"
+          selectedKeys={[location.pathname]}
+          items={navItems}
+          style={{ 
+            background: 'transparent', // Nền trong suốt để ăn theo màu Header
+            borderBottom: 'none',
+            lineHeight: '64px',
+            fontSize: '15px',
+            fontWeight: 500,
+            minWidth: '300px'
+          }}
+          disabledOverflow={true}
+        />
+      </div>
 
-            {/* ACTIONS (Giỏ hàng + User) */}
-            <Space size="middle">
-                {/* Nút Giỏ hàng */}
-                <Badge count={0} size="small"> {/* Số 0 là giả định, sau này lấy từ state */}
-                <Button 
-                    shape="circle" 
-                    icon={<ShoppingCartOutlined />} 
-                    onClick={() => navigate('/cart')}
-                />
-                </Badge>
+      {/* --- KHỐI 3: SEARCH --- */}
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+        <Search
+          placeholder="Tìm kiếm sản phẩm..."
+          onSearch={onSearch}
+          enterButton
+          size="large"
+          style={{ maxWidth: '500px', width: '100%' }}
+          // Search box mặc định màu trắng nên rất nổi trên nền tối, không cần sửa
+        />
+      </div>
 
-                {/* User Info hoặc Nút Login */}
-                {user ? (
-                <Dropdown menu={userMenu} placement="bottomRight">
-                    <Space style={{ cursor: 'pointer', padding: '0 10px' }}>
-                    <Avatar style={{ backgroundColor: '#1890ff' }} icon={<UserOutlined />} />
-                    <span style={{ fontWeight: 500, display: 'inline-block' }}>
-                        {user.full_name || user.email || "User"}
-                    </span>
-                    <DownOutlined style={{ fontSize: '10px' }} />
-                    </Space>
-                </Dropdown>
-                ) : (
-                <Button type="primary" onClick={() => navigate('/login')}>
-                    Đăng nhập
-                </Button>
-                )}
-            </Space>
-        </Header>
-    )
-}
+      {/* --- KHỐI 4: ACTIONS --- */}
+      <Space size={24} style={{ flexShrink: 0 }}>
+        {/* Giỏ hàng */}
+        <Badge count={2} size="small" offset={[-2, 2]}>
+          <Button 
+            shape="circle" 
+            size="large"
+            // 👇 5. Đổi màu Icon giỏ hàng thành Trắng
+            icon={<ShoppingCartOutlined style={{ fontSize: '20px', color: '#fff' }} />} 
+            onClick={() => navigate('/cart')}
+            style={{ 
+              background: 'transparent', // Nền trong suốt
+              borderColor: 'rgba(255,255,255,0.3)' // Viền mờ
+            }} 
+          />
+        </Badge>
 
-export default AppHeader
+        {/* User Dropdown */}
+        {user ? (
+          <Dropdown menu={userMenu} placement="bottomRight" arrow trigger={['click']}>
+            <div 
+              style={{ 
+                cursor: 'pointer', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                transition: 'all 0.3s',
+                color: '#fff' // 👇 6. Đổi màu chữ tên User thành Trắng
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} // Hover màu sáng nhẹ
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              <Avatar style={{ backgroundColor: '#40a9ff', verticalAlign: 'middle' }} icon={<UserOutlined />} size="default" />
+              <span style={{ fontWeight: 500, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user.full_name || "Thành viên"}
+              </span>
+              <DownOutlined style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)' }} />
+            </div>
+          </Dropdown>
+        ) : (
+          <Button type="primary" onClick={() => navigate('/login')} size="large">
+            Đăng nhập
+          </Button>
+        )}
+      </Space>
+    </Header>
+  );
+};
+
+export default AppHeader;
