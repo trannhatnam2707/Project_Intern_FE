@@ -11,6 +11,7 @@ import RegisterPage from '../page/auth/RegisterPage';
 import HomePage from '../page/client/HomePage';
 import ForgotPasswordPage from '../page/auth/ForgotPasswordPage';
 import ResetPasswordPage from '../page/auth/ResetPasswordPage';
+import ProductDetailPage from '../page/client/ProductDetailPage';
 
 const AppRouter = () => {
   // Kiểm tra token để xác định trạng thái đăng nhập
@@ -42,7 +43,10 @@ const AppRouter = () => {
           element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />} 
         />
         
-        {/* Sau này thêm các route khác như: /products, /cart, /profile... */}
+        <Route 
+          path="/product/:id" 
+          element={isAuthenticated ? <ProductDetailPage /> : <Navigate to="/login" />} 
+        />
       </Route>
 
       {/* Catch all - Điều hướng trang 404 về trang chủ */}

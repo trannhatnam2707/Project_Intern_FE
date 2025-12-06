@@ -3,6 +3,7 @@ import { Layout, Menu, Button, Badge, Dropdown, Avatar, Space, Input, message } 
 import { ShoppingCartOutlined, UserOutlined, LogoutOutlined, DownOutlined, ShopOutlined, AppstoreOutlined, HistoryOutlined } from '@ant-design/icons';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { logout } from '../../services/auth';
+import { getAllCategories } from '../../services/category';
 
 const { Header } = Layout;
 const { Search } = Input;
@@ -11,9 +12,11 @@ const AppHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
+  const [categories, setCategories] = useState([]); 
 
-  // Lấy thông tin user
+  // 1. Lấy thông tin User & Danh mục từ API
   useEffect(() => {
+    // Lấy User từ Storage
     const userStr = localStorage.getItem("user_info") || sessionStorage.getItem("user_info");
     if (userStr) {
       try {
@@ -22,6 +25,16 @@ const AppHeader = () => {
         console.error("Lỗi parse user info", e);
       }
     }
+
+    const fetchCategories = async () => {
+      try {
+        const data = await getAllCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error("Lỗi tải danh mục header:", error);
+      }
+    };
+    fetchCategories();
   }, []);
 
   const onSearch = (value) => {
@@ -30,7 +43,6 @@ const AppHeader = () => {
     }
   };
 
-  // Menu Dropdown của User
   const userMenu = {
     items: [
       {
@@ -54,7 +66,7 @@ const AppHeader = () => {
     ]
   };
 
-  // Menu chính
+  // 🆕 Cấu hình Menu Items Động
   const navItems = [
     { 
       key: '/', 
@@ -65,13 +77,12 @@ const AppHeader = () => {
       key: 'products-submenu',
       label: 'Danh Mục',
       icon: <AppstoreOutlined />,
-      children: [
-        { key: '/products/laptops', label: <Link to="/products/laptops">Laptop</Link> },
-        { key: '/products/phones', label: <Link to="/products/phones">Điện thoại</Link> },
-        { key: '/products/watches', label: <Link to="/products/watches">Đồng hồ</Link> },
-        { key: '/products/watches', label: <Link to="/products/watches">Đồng hồ</Link> },
-        { key: '/products/watches', label: <Link to="/products/watches">Đồng hồ</Link> },
-
+      // 👇 Nếu có danh mục từ DB thì map ra, nếu chưa thì để mảng rỗng hoặc loading
+      children: categories.length > 0 ? categories.map(cat => ({
+        key: `/products?category=${cat.CategoryID}`, // Link theo ID danh mục
+        label: <Link to={`/products?category=${cat.CategoryID}`}>{cat.CategoryName}</Link>
+      })) : [
+        { key: 'loading', label: 'Đang tải...', disabled: true }
       ],
     },
   ];
@@ -83,9 +94,7 @@ const AppHeader = () => {
         top: 0,
         zIndex: 1000,
         width: '100%',
-        // 👇 1. Đổi màu nền sang xanh đen (#001529) cho giống Footer
         background: '#001529',
-        // Thêm đường viền mờ bên dưới để tách biệt nếu body cùng màu tối (tùy chọn)
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)', 
         padding: '0 24px',
         height: '64px',
@@ -94,28 +103,26 @@ const AppHeader = () => {
         gap: '20px'
       }}
     >
-      {/* --- KHỐI 1: LOGO --- */}
+      {/* Logo */}
       <div 
         className="logo" 
         style={{ cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center' }} 
         onClick={() => navigate('/')}
       >
-        {/* 👇 2. Chữ "Wehappi" màu xanh sáng hơn (#40a9ff) để dễ nhìn trên nền tối */}
-        {/* 👇 3. Chữ "Tech" đổi thành màu Trắng (#fff) */}
         <span style={{ fontSize: '24px', fontWeight: '800', color: '#40a9ff', lineHeight: 1 }}>
           Wehappi<span style={{ color: '#fff' }}>Tech</span>
         </span>
       </div>
 
-      {/* --- KHỐI 2: MENU --- */}
+      {/* Menu */}
       <div style={{ minWidth: '200px' }}>
         <Menu
-          theme="dark" // 👈 4. Quan trọng: Chế độ tối giúp chữ tự động thành màu trắng
+          theme="dark"
           mode="horizontal"
           selectedKeys={[location.pathname]}
           items={navItems}
           style={{ 
-            background: 'transparent', // Nền trong suốt để ăn theo màu Header
+            background: 'transparent',
             borderBottom: 'none',
             lineHeight: '64px',
             fontSize: '15px',
@@ -126,7 +133,7 @@ const AppHeader = () => {
         />
       </div>
 
-      {/* --- KHỐI 3: SEARCH --- */}
+      {/* Search */}
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
         <Search
           placeholder="Tìm kiếm sản phẩm..."
@@ -134,28 +141,24 @@ const AppHeader = () => {
           enterButton
           size="large"
           style={{ maxWidth: '500px', width: '100%' }}
-          // Search box mặc định màu trắng nên rất nổi trên nền tối, không cần sửa
         />
       </div>
 
-      {/* --- KHỐI 4: ACTIONS --- */}
+      {/* Actions */}
       <Space size={24} style={{ flexShrink: 0 }}>
-        {/* Giỏ hàng */}
         <Badge count={2} size="small" offset={[-2, 2]}>
           <Button 
             shape="circle" 
             size="large"
-            // 👇 5. Đổi màu Icon giỏ hàng thành Trắng
             icon={<ShoppingCartOutlined style={{ fontSize: '20px', color: '#fff' }} />} 
             onClick={() => navigate('/cart')}
             style={{ 
-              background: 'transparent', // Nền trong suốt
-              borderColor: 'rgba(255,255,255,0.3)' // Viền mờ
+              background: 'transparent',
+              borderColor: 'rgba(255,255,255,0.3)'
             }} 
           />
         </Badge>
 
-        {/* User Dropdown */}
         {user ? (
           <Dropdown menu={userMenu} placement="bottomRight" arrow trigger={['click']}>
             <div 
@@ -167,9 +170,9 @@ const AppHeader = () => {
                 padding: '4px 8px',
                 borderRadius: '6px',
                 transition: 'all 0.3s',
-                color: '#fff' // 👇 6. Đổi màu chữ tên User thành Trắng
+                color: '#fff'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} // Hover màu sáng nhẹ
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             >
               <Avatar style={{ backgroundColor: '#40a9ff', verticalAlign: 'middle' }} icon={<UserOutlined />} size="default" />

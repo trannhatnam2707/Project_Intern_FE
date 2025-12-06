@@ -6,7 +6,7 @@
 import api from "./axios";
 
 export const register = async (fullName, email, password) => {
-    const res = await api.post ("/api/users/register", {
+    const res = await api.post ("/api/users/register/", {
         FullName: fullName,
         Email: email,
         Password: password,
@@ -42,19 +42,19 @@ export const login = async (email, password, remember = false) => {
 
 // Lấy thống tin User hiện tại
 export const getMe = async () =>{
-    const res = await api.get("api/users/me")
+    const res = await api.get("api/users/me/")
     return res
 }
 
 // cập nhật profile
 export const updateProfile = async (data) => {
-    const res = await api.put("/api/users/profile", data)
+    const res = await api.put("/api/users/profile/", data)
     return res
 }
 
 // Đổi mật khẩu
 export const changePassword = async(oldPassword, newPassword) => {
-    const res = await api.put("/api/users/change-password", {
+    const res = await api.put("/api/users/change-password/", {
         OldPassword:oldPassword,
         NewPassword:newPassword,
     })
@@ -63,7 +63,7 @@ export const changePassword = async(oldPassword, newPassword) => {
 
 //Quên mật khẩu (Gửi email)
 export const forgotPassword = async(email) => {
-    const res = await api.post("/api/users/forgot-password", null, {
+    const res = await api.post("/api/users/forgot-password/", null, {
         params:{email}
     })
     return res;
@@ -72,7 +72,7 @@ export const forgotPassword = async(email) => {
 // Đặt lại mật khẩu
 export const confirmResetPassword = async (token, newPassword) => {
     // Gọi API Backend: POST /api/users/reset-password
-    const res = await api.post("/api/users/reset-password", {
+    const res = await api.post("/api/users/reset-password/", {
         token: token,
         new_password: newPassword
     });
