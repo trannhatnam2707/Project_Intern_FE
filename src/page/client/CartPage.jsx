@@ -3,9 +3,11 @@ import { Row, Col, Typography, message, Modal, Result, Button } from 'antd';
 import { ShoppingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
+// Import Components Cart
 import CartList from '../../components/cart/CartList';
 import CartSummary from '../../components/cart/CartSummary';
 
+// Import Utils & Services
 import { getCart, updateCartQuantity, removeFromCart, clearCart } from '../../utils/cart';
 import { createOrder } from '../../services/order';
 
@@ -13,44 +15,48 @@ const { Title } = Typography;
 
 const CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]); // State lưu các ID được chọn
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]); // State lưu danh sách ID sản phẩm được tick chọn
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Load giỏ hàng từ LocalStorage
   useEffect(() => {
     setCartItems(getCart());
   }, []);
 
+  // Xử lý thay đổi số lượng
   const handleQuantityChange = (productId, newQuantity) => {
     const updatedCart = updateCartQuantity(productId, newQuantity);
     setCartItems(updatedCart);
   };
 
+  // Xử lý xóa sản phẩm
   const handleRemove = (productId) => {
     Modal.confirm({
       title: 'Xác nhận xóa',
-      content: 'Bạn muốn xóa sản phẩm này?',
+      content: 'Bạn muốn xóa sản phẩm này khỏi giỏ hàng?',
       okText: 'Xóa',
       okType: 'danger',
       cancelText: 'Hủy',
       onOk: () => {
         const updatedCart = removeFromCart(productId);
         setCartItems(updatedCart);
-        // Nếu xóa món đang chọn thì bỏ nó khỏi danh sách chọn luôn
+        // Xóa luôn khỏi danh sách đang chọn (nếu có)
         setSelectedRowKeys(prev => prev.filter(id => id !== productId));
         message.success('Đã xóa sản phẩm');
       },
     });
   };
 
-  // Hàm khi người dùng tích vào ô vuông
+  // Hàm khi người dùng tích vào checkbox
   const onSelectionChange = (newSelectedRowKeys) => {
     setSelectedRowKeys(newSelectedRowKeys);
   };
 
-  // Lọc ra các sản phẩm thực sự được chọn để tính tiền
+  // Lọc ra các sản phẩm ĐƯỢC CHỌN để truyền sang CartSummary tính tiền
   const selectedItems = cartItems.filter(item => selectedRowKeys.includes(item.ProductID));
 
+  // Xử lý Thanh toán
   const handleCheckout = async () => {
     const token = localStorage.getItem("access_token");
     if (!token) {
@@ -66,19 +72,21 @@ const CartPage = () => {
 
     try {
         setLoading(true);
+        // Chuẩn bị dữ liệu gửi lên API (chỉ gửi những món đã chọn)
         const itemsPayload = selectedItems.map(item => ({
             product_id: item.ProductID,
             quantity: item.quantity
         }));
 
+        // Gọi API tạo đơn hàng
         await createOrder(itemsPayload);
         
-        // Sau khi mua xong, chỉ xóa những món đã mua khỏi giỏ
+        // Thành công: Chỉ xóa những món ĐÃ MUA khỏi giỏ hàng
         selectedItems.forEach(item => removeFromCart(item.ProductID));
         
-        // Cập nhật lại giỏ hàng trên giao diện (giữ lại món chưa mua)
+        // Cập nhật lại giao diện (giữ lại các món chưa mua)
         setCartItems(prev => prev.filter(item => !selectedRowKeys.includes(item.ProductID)));
-        setSelectedRowKeys([]); // Reset chọn
+        setSelectedRowKeys([]); // Reset lựa chọn
         
         Modal.success({
             title: 'Đặt hàng thành công!',
@@ -103,19 +111,21 @@ const CartPage = () => {
 
       {cartItems.length > 0 ? (
         <Row gutter={24}>
+          {/* Cột trái: Danh sách sản phẩm (Có checkbox) */}
           <Col xs={24} lg={16}>
             <CartList 
                 cartItems={cartItems} 
                 onQuantityChange={handleQuantityChange} 
                 onRemove={handleRemove}
-                // Truyền props để hiện checkbox
+                // Truyền props cho checkbox
                 selectedRowKeys={selectedRowKeys}
                 onSelectionChange={onSelectionChange}
             />
           </Col>
+          
+          {/* Cột phải: Tổng tiền (Chỉ tính những món đã chọn) */}
           <Col xs={24} lg={8}>
             <CartSummary 
-                // Truyền danh sách ĐÃ CHỌN sang để tính tiền
                 selectedItems={selectedItems} 
                 onCheckout={handleCheckout} 
                 loading={loading}

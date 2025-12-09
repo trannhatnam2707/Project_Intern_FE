@@ -3,11 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Row, Col, Image, Typography, Button, Rate, Tag, InputNumber, Divider, Space, message, Spin, Card, Breadcrumb, Modal } from 'antd';
 import { ShoppingCartOutlined, CheckCircleOutlined, HomeOutlined, ThunderboltOutlined } from '@ant-design/icons';
 
+// Import Services & Utils
 import { getProductById } from '../../services/product';
 import { getReviewsByProduct } from '../../services/reviews';
 import { createOrder } from '../../services/order';
 import { formatPrice } from '../../utils/format';
-import { addToCart } from '../../utils/cart';
+import { addToCart } from '../../utils/cart'; // Hàm lưu LocalStorage
+
+// Import Component con
 import ProductReviews from '../../components/product/ProductReviews';
 
 const { Title, Paragraph, Text } = Typography;
@@ -25,7 +28,7 @@ const ProductDetailPage = () => {
   const isAuthenticated = !!(localStorage.getItem("access_token"));
 
   useEffect(() => {
-    // Cuộn lên đầu trang khi vào trang chi tiết
+    // 1. Luôn cuộn lên đầu trang khi ID thay đổi
     window.scrollTo(0, 0);
 
     const fetchData = async () => {
@@ -39,6 +42,7 @@ const ProductDetailPage = () => {
         setProduct(productData);
         setReviews(reviewsData);
 
+        // Tính điểm đánh giá trung bình
         if (reviewsData.length > 0) {
             const total = reviewsData.reduce((acc, curr) => acc + curr.Rating, 0);
             setAvgRating(total / reviewsData.length);
@@ -47,7 +51,7 @@ const ProductDetailPage = () => {
         }
       } catch (error) {
         console.error("Lỗi:", error);
-        message.error("Lỗi tải dữ liệu!");
+        message.error("Lỗi tải dữ liệu sản phẩm!");
       } finally {
         setLoading(false);
       }
@@ -56,9 +60,8 @@ const ProductDetailPage = () => {
     if (id) fetchData();
   }, [id]);
 
-  // Xử lý Thêm vào giỏ
+  // Xử lý nút "Thêm vào giỏ" -> Lưu vào LocalStorage
   const handleAddToCart = () => {
-    if (!product) return;
     if (quantity > product.Stock) {
         message.warning("Số lượng yêu cầu vượt quá tồn kho!");
         return;
@@ -67,7 +70,7 @@ const ProductDetailPage = () => {
     message.success(`Đã thêm ${quantity} sản phẩm vào giỏ!`);
   };
 
-  // Xử lý Mua ngay (Tạo đơn hàng trực tiếp)
+  // Xử lý nút "Mua ngay" -> Gọi API trực tiếp (Bỏ qua giỏ hàng)
   const handleBuyNow = () => {
     if (!isAuthenticated) {
         message.warning("Vui lòng đăng nhập để mua hàng!");
@@ -88,7 +91,7 @@ const ProductDetailPage = () => {
                     <p style={{ margin: 0 }}><b>{product.ProductName}</b></p>
                     <p style={{ margin: '5px 0' }}>Số lượng: {quantity}</p>
                     <p style={{ margin: 0, color: 'red', fontWeight: 'bold' }}>
-                        Tổng tiền: {formatPrice(product.Price * quantity)}
+                        Thành tiền: {formatPrice(product.Price * quantity)}
                     </p>
                 </div>
             </div>
@@ -97,12 +100,12 @@ const ProductDetailPage = () => {
         cancelText: 'Hủy',
         onOk: async () => {
             try {
-                // Gọi API tạo đơn hàng luôn
+                // Gọi API tạo đơn hàng trực tiếp
                 await createOrder([{ product_id: product.ProductID, quantity: quantity }]);
                 
                 Modal.success({
                     title: 'Đặt hàng thành công!',
-                    content: 'Đơn hàng của bạn đã được ghi nhận.',
+                    content: 'Đơn hàng của bạn đã được tạo thành công.',
                     okText: 'Xem đơn hàng',
                     onOk: () => navigate('/orders'), // Chuyển sang trang lịch sử đơn hàng
                 });
@@ -118,16 +121,19 @@ const ProductDetailPage = () => {
 
   return (
     <div style={{ paddingBottom: '40px' }}>
+      {/* Breadcrumb */}
       <Breadcrumb style={{ margin: '16px 0' }} items={[{ href: '/', title: <HomeOutlined /> }, { title: 'Sản phẩm' }, { title: product.ProductName }]} />
 
       <Card style={{ borderRadius: '12px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <Row gutter={[48, 32]}>
+          {/* Cột trái: Ảnh */}
           <Col xs={24} md={10}>
             <div style={{ border: '1px solid #f0f0f0', borderRadius: '8px', padding: '20px', display: 'flex', justifyContent: 'center', backgroundColor: '#fff' }}>
               <Image src={product.ImageURL || "https://via.placeholder.com/500"} style={{ maxHeight: '400px', objectFit: 'contain' }} />
             </div>
           </Col>
 
+          {/* Cột phải: Thông tin */}
           <Col xs={24} md={14}>
             <Title level={2} style={{ marginBottom: 10 }}>{product.ProductName}</Title>
             
@@ -151,6 +157,7 @@ const ProductDetailPage = () => {
 
             <Divider />
 
+            {/* Nút Mua & Số lượng */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <Space>
                     <Text strong>Số lượng:</Text>
@@ -181,17 +188,7 @@ const ProductDetailPage = () => {
         </Row>
       </Card>
 
-      {/* Component Mô tả chi tiết (nếu có) */}
-      {product.Description && (
-        <Card style={{ marginTop: '24px', borderRadius: '12px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-            <Title level={4}>Mô tả chi tiết</Title>
-            <div style={{ fontSize: '15px', lineHeight: '1.8', color: '#333' }}>
-                {product.Description}
-            </div>
-        </Card>
-      )}
-
-      {/* Component Đánh giá */}
+      {/* Component Reviews */}
       <ProductReviews 
         productId={id} 
         reviews={reviews} 
