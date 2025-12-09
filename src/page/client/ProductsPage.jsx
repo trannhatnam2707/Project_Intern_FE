@@ -1,7 +1,8 @@
+// src/page/client/ProductsPage.jsx
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Spin, Typography, Breadcrumb, Empty, Pagination, Row, Col } from 'antd'; // Import Pagination
-import { HomeOutlined, AppstoreOutlined } from '@ant-design/icons';
+import { Spin, Typography, Breadcrumb, Empty, Pagination } from 'antd';
+import { HomeOutlined, AppstoreOutlined, SearchOutlined } from '@ant-design/icons'; // Thêm SearchOutlined
 
 import ProductList from '../../components/product/ProductList';
 import { getAllProducts } from '../../services/product';
@@ -12,36 +13,34 @@ const ProductsPage = () => {
   const [searchParams] = useSearchParams();
   const categoryId = searchParams.get('category');
   const sortBy = searchParams.get('sort');
+  const searchKeyword = searchParams.get('search'); // 🆕 Lấy từ khóa từ URL
   
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // 🆕 State cho phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const pageSize = 12; // Số sản phẩm mỗi trang
+  const pageSize = 12;
 
+  // Reset về trang 1 nếu điều kiện lọc thay đổi
   useEffect(() => {
-    // Reset về trang 1 khi đổi danh mục hoặc bộ lọc
     setCurrentPage(1);
-  }, [categoryId, sortBy]);
+  }, [categoryId, sortBy, searchKeyword]);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        // Gọi API với page và limit
+        // Gọi API kèm theo searchKeyword
         const response = await getAllProducts({ 
             category_id: categoryId, 
             sort_by: sortBy,
+            search: searchKeyword, // 👈 Truyền xuống service
             page: currentPage,
             limit: pageSize
         });
         
-        // 🆕 Cập nhật dữ liệu từ cấu trúc mới { data, total }
         setProducts(response.data);
         setTotal(response.total);
-
       } catch (error) {
         console.error("Lỗi tải sản phẩm:", error);
       } finally {
@@ -50,26 +49,30 @@ const ProductsPage = () => {
     };
 
     fetchProducts();
-  }, [categoryId, sortBy, currentPage]); // Chạy lại khi đổi trang
+  }, [categoryId, sortBy, searchKeyword, currentPage]); 
 
-  // Hàm đổi trang
-  const onPageChange = (page) => {
-    setCurrentPage(page);
-    window.scrollTo(0, 0); // Cuộn lên đầu
+  // Tạo tiêu đề động
+  const getPageTitle = () => {
+      if (searchKeyword) return `Kết quả tìm kiếm: "${searchKeyword}"`; // 🆕
+      if (categoryId) return "Danh mục sản phẩm";
+      if (sortBy === 'best_seller') return "Bán Chạy Nhất";
+      if (sortBy === 'newest') return "Hàng Mới Về";
+      return "Tất cả sản phẩm";
   };
 
-  const getPageTitle = () => {
-      if (categoryId) return "Sản phẩm theo danh mục";
-      if (sortBy === 'best_seller') return "Top Bán Chạy Nhất";
-      if (sortBy === 'newest') return "Sản Phẩm Mới Về";
-      return "Tất cả sản phẩm";
+  const onPageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo(0, 0);
   };
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
       <Breadcrumb style={{ margin: '16px 0' }}>
         <Breadcrumb.Item href="/"><HomeOutlined /></Breadcrumb.Item>
-        <Breadcrumb.Item><AppstoreOutlined /> <span> {getPageTitle()}</span></Breadcrumb.Item>
+        <Breadcrumb.Item>
+            {searchKeyword ? <SearchOutlined /> : <AppstoreOutlined />} 
+            <span> {getPageTitle()}</span>
+        </Breadcrumb.Item>
       </Breadcrumb>
 
       <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', minHeight: '60vh' }}>
@@ -80,8 +83,6 @@ const ProductsPage = () => {
         ) : products.length > 0 ? (
             <>
                 <ProductList products={products} />
-                
-                {/* 👇 THANH PHÂN TRANG */}
                 <div style={{ marginTop: 40, textAlign: 'center' }}>
                     <Pagination 
                         current={currentPage} 
@@ -93,7 +94,7 @@ const ProductsPage = () => {
                 </div>
             </>
         ) : (
-            <Empty description="Không tìm thấy sản phẩm nào" />
+            <Empty description={`Không tìm thấy sản phẩm nào khớp với "${searchKeyword || ''}"`} />
         )}
       </div>
     </div>
