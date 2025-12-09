@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Carousel, Spin, Typography, message, Avatar, Row, Col } from 'antd';
+import { Carousel, Spin, Typography, message, Avatar, Row, Col, Divider } from 'antd';
 import {   FireOutlined, StarOutlined, RocketOutlined, 
   LaptopOutlined, MobileOutlined, AppstoreOutlined, 
   ReadOutlined, DesktopOutlined, AudioOutlined
 } from '@ant-design/icons';
+import { MdWatch } from 'react-icons/md';
 
 import { useNavigate } from 'react-router-dom';
 import { getAllProducts } from '../../services/product';
@@ -13,9 +14,9 @@ import ProductList from '../../components/product/ProductList';
 const { Title, Text } = Typography;
 
 const banners = [
-  "https://img.freepik.com/free-vector/horizontal-banner-template-big-sale-with-woman-shopping-bags_23-2148786422.jpg?w=1380",
-  "https://img.freepik.com/free-vector/flat-horizontal-sale-banner-template-with-photo_23-2149000923.jpg?w=1380",
-  "https://img.freepik.com/free-vector/ecommerce-web-banner-template_23-2149559191.jpg?w=1380"
+  "https://media.licdn.com/dms/image/v2/C5112AQEge5XaAe0-9w/article-inline_image-shrink_400_744/article-inline_image-shrink_400_744/0/1520191002197?e=1766620800&v=beta&t=iBInS-0DZ-H757k7NBcxHLz-XlUjIe53KUlVAeuf10o",
+  "https://dknstore.vn/wp-content/uploads/2022/04/banner-dkn-store-01.jpg",
+  "https://saolaptop.vn/wp-content/uploads/2021/04/tranphat_banner1_1_1587567515.jpg"
 ];
 
 const HomePage = () => {
@@ -49,8 +50,7 @@ const HomePage = () => {
     const name = categoryName.toLowerCase();
     if (name.includes('điện thoại')) return <MobileOutlined />;
     if (name.includes('laptop')) return <LaptopOutlined />;
-    if (name.includes('đồng hồ')) return <StarOutlined />;
-    if (name.includes('sách')) return <ReadOutlined />;
+    if (name.includes('đồng hồ')) return <MdWatch />;
     return <AppstoreOutlined />;
   };
 

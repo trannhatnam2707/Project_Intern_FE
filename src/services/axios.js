@@ -35,9 +35,9 @@ api.interceptors.response.use(
             // Tùy chọn: Xóa token và reload trang để về login
             // localStorage.removeItem("access_token");
             // window.location.href = "/login";
-    }
-    // Ném lỗi ra để component (trang Login/Register) tự xử lý hiển thị thông báo
-    return Promise.reject(error);
+        }
+        // Ném lỗi ra để component (trang Login/Register) tự xử lý hiển thị thông báo
+        return Promise.reject(error);
     }
 )
 

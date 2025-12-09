@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, List, Avatar, Space, Typography, Rate, Form, Input, Button, message } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +10,7 @@ const { TextArea } = Input;
 const ProductReviews = ({ productId, reviews, setReviews, setAvgRating, isAuthenticated }) => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
-  const [submitting, setSubmitting] = React.useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const onFinishReview = async (values) => {
     if (!isAuthenticated) {

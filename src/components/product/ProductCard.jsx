@@ -3,6 +3,7 @@ import { Card, Image, Button, Typography, Tag, message } from 'antd';
 import { ShoppingCartOutlined, EyeOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { formatPrice } from '../../utils/format';
+import { addToCart } from '../../utils/cart';
 
 const { Text } = Typography;
 
@@ -10,7 +11,8 @@ const ProductCard = ({ product }) => {
   const navigate = useNavigate();
 
   const handleAddToCart = (e) => {
-    e.stopPropagation(); // Chặn sự kiện click lan ra ngoài (để không bị nhảy trang)
+    e.stopPropagation(); // Chặn sự kiện click lan ra ngoài thẻ card
+    addToCart(product, 1);
     message.success(`Đã thêm ${product.ProductName} vào giỏ!`);
   };
 
@@ -82,13 +84,13 @@ const ProductCard = ({ product }) => {
 
       <div style={{ marginBottom: '12px', flex: 1 }}>
         <Text type="secondary" style={{ fontSize: '13px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: '40px' }}>
-          {product.MarketingContent || "Sản phẩm chính hãng, chất lượng cao."}
+          {product.MarketingContent || "Sản phẩm công nghệ chính hãng chất lượng cao."}
         </Text>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
         <Text type="danger" strong style={{ fontSize: '16px' }}>{formatPrice(product.Price)}</Text>
-        {product.Stock > 0 ? <Tag color="green">Sẵn hàng</Tag> : <Tag color="red">Hết hàng</Tag>}
+        {product.Stock > 0 ? <Tag color="green" style={{marginRight: 0}}>Sẵn hàng</Tag> : <Tag color="red" style={{marginRight: 0}}>Hết hàng</Tag>}
       </div>
     </Card>
   );
