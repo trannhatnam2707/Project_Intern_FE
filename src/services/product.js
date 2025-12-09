@@ -1,8 +1,8 @@
 import api from "./axios.js";
 
-//Get all products
-export const getAllProducts = async () => {
-    const res = await api.get("/api/products/");
+// Giữ nguyên, chỉ cần nhớ tham số params sẽ có thêm page, limit
+export const getAllProducts = async (params = {}) => {
+    const res = await api.get("/api/products/", { params });
     return res;
 }
 

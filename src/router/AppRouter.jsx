@@ -16,6 +16,7 @@ import CartPage from '../page/client/CartPage';
 import PaymentSuccessPage from '../page/client/PaymentSuccessPage';
 import PaymentCancelPage from '../page/client/PaymentCancelPage';
 import ProfilePage from '../page/client/ProfilePage';
+import ProductsPage from '../page/client/ProductsPage';
 import OrderHistoryPage from '../page/client/OrderHistoryPage';
 
 const AppRouter = () => {
@@ -64,6 +65,7 @@ const AppRouter = () => {
             path="/orders" 
             element={isAuthenticated ? <OrderHistoryPage /> : <Navigate to="/login" />} 
         />
+        <Route path="/products" element={<ProductsPage />} />
         </Route>
 
       {/* Catch all - Điều hướng trang 404 về trang chủ */}

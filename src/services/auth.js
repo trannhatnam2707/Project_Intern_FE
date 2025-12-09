@@ -42,7 +42,7 @@ export const login = async (email, password, remember = false) => {
 
 // Lấy thống tin User hiện tại
 export const getMe = async () =>{
-    const res = await api.get("/api/users/me/")
+    const res = await api.get("/api/users/me")
     return res
 }
 

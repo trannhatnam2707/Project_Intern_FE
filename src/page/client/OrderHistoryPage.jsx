@@ -1,8 +1,9 @@
-// src/page/client/OrderHistoryPage.jsx
 import React, { useEffect, useState } from 'react';
-import { Table, Tag, Typography, Button, Space, Card, Modal, Descriptions } from 'antd';
-import { EyeOutlined, ShoppingOutlined } from '@ant-design/icons';
+import { Table, Tag, Typography, Button, Space, Card, Modal, Descriptions, message, Spin } from 'antd';
+import { EyeOutlined, ShoppingOutlined, CreditCardOutlined } from '@ant-design/icons';
 import { getMyOrders } from '../../services/order';
+// 👇 Import thêm service tạo link thanh toán
+import { createPaymentUrl } from '../../services/payment'; 
 import { formatPrice } from '../../utils/format';
 
 const { Title, Text } = Typography;
@@ -10,7 +11,8 @@ const { Title, Text } = Typography;
 const OrderHistoryPage = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedOrder, setSelectedOrder] = useState(null); // Để hiện Modal chi tiết
+  const [paying, setPaying] = useState(false); // State loading khi bấm thanh toán
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -27,7 +29,28 @@ const OrderHistoryPage = () => {
     fetchOrders();
   }, []);
 
-  // Hàm hiển thị màu sắc cho trạng thái đơn hàng
+  // 👇 Hàm xử lý thanh toán lại
+  const handleRepay = async (orderId) => {
+    try {
+        setPaying(true);
+        message.loading("Đang kết nối cổng thanh toán...", 1);
+        
+        // Gọi lại API tạo link Stripe cho đơn hàng cũ
+        const res = await createPaymentUrl(orderId);
+        
+        if (res.checkout_url) {
+            // Chuyển hướng sang Stripe
+            window.location.href = res.checkout_url;
+        } else {
+            message.error("Không tạo được link thanh toán.");
+        }
+    } catch (error) {
+        message.error("Lỗi kết nối thanh toán: " + (error.response?.data?.detail || "Vui lòng thử lại"));
+    } finally {
+        setPaying(false);
+    }
+  };
+
   const getStatusTag = (status) => {
     switch (status) {
       case 'Pending': return <Tag color="orange">Chờ thanh toán</Tag>;
@@ -48,16 +71,32 @@ const OrderHistoryPage = () => {
       title: 'Hành động',
       key: 'action',
       render: (_, record) => (
-        <Button 
-            type="link" 
-            icon={<EyeOutlined />} 
-            onClick={() => {
-                setSelectedOrder(record);
-                setIsModalOpen(true);
-            }}
-        >
-            Chi tiết
-        </Button>
+        <Space>
+            {/* Nút Chi tiết */}
+            <Button 
+                type="text" 
+                icon={<EyeOutlined />} 
+                onClick={() => {
+                    setSelectedOrder(record);
+                    setIsModalOpen(true);
+                }}
+            >
+                Chi tiết
+            </Button>
+
+            {/* 👇 CHỈ HIỆN NÚT THANH TOÁN NẾU LÀ PENDING */}
+            {record.Status === 'Pending' && (
+                <Button 
+                    type="primary" 
+                    size="small"
+                    icon={<CreditCardOutlined />} 
+                    loading={paying}
+                    onClick={() => handleRepay(record.OrderID)}
+                >
+                    Thanh toán
+                </Button>
+            )}
+        </Space>
       ),
     },
   ];
@@ -77,26 +116,27 @@ const OrderHistoryPage = () => {
         />
       </Card>
 
-      {/* Modal Chi tiết đơn hàng */}
       <Modal 
         title={`Chi tiết đơn hàng #${selectedOrder?.OrderID}`} 
         open={isModalOpen} 
         onCancel={() => setIsModalOpen(false)}
-        footer={[<Button key="close" onClick={() => setIsModalOpen(false)}>Đóng</Button>]}
-        width={700}
+        footer={[
+            <Button key="close" onClick={() => setIsModalOpen(false)}>Đóng</Button>,
+            // Cũng có thể thêm nút thanh toán trong Modal chi tiết luôn
+            selectedOrder?.Status === 'Pending' && (
+                <Button key="pay" type="primary" onClick={() => handleRepay(selectedOrder.OrderID)}>
+                    Thanh toán ngay
+                </Button>
+            )
+        ]}
+        width={600}
       >
         {selectedOrder && (
-            <>
-                <Descriptions bordered column={1} size="small">
-                    <Descriptions.Item label="Ngày đặt">{new Date(selectedOrder.OrderDate).toLocaleString('vi-VN')}</Descriptions.Item>
-                    <Descriptions.Item label="Trạng thái">{getStatusTag(selectedOrder.Status)}</Descriptions.Item>
-                    <Descriptions.Item label="Tổng tiền">{formatPrice(selectedOrder.TotalAmount)}</Descriptions.Item>
-                </Descriptions>
-                
-                {/* Nếu Backend có trả về chi tiết sản phẩm trong Order thì map ra đây */}
-                {/* Hiện tại API getMyOrders của bạn chỉ trả về thông tin chung, 
-                    nếu muốn hiện list sản phẩm thì cần update Backend thêm relationship */}
-            </>
+            <Descriptions bordered column={1} size="small">
+                <Descriptions.Item label="Ngày đặt">{new Date(selectedOrder.OrderDate).toLocaleString('vi-VN')}</Descriptions.Item>
+                <Descriptions.Item label="Trạng thái">{getStatusTag(selectedOrder.Status)}</Descriptions.Item>
+                <Descriptions.Item label="Tổng tiền">{formatPrice(selectedOrder.TotalAmount)}</Descriptions.Item>
+            </Descriptions>
         )}
       </Modal>
     </div>
