@@ -8,3 +8,8 @@ export const createOrder = async (items) => {
     });
     return res;
 };
+
+export const getMyOrders = async () => {
+    const res = await api.get("/api/orders/my");
+    return res;
+};

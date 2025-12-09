@@ -15,6 +15,8 @@ import ProductDetailPage from '../page/client/ProductDetailPage';
 import CartPage from '../page/client/CartPage';
 import PaymentSuccessPage from '../page/client/PaymentSuccessPage';
 import PaymentCancelPage from '../page/client/PaymentCancelPage';
+import ProfilePage from '../page/client/ProfilePage';
+import OrderHistoryPage from '../page/client/OrderHistoryPage';
 
 const AppRouter = () => {
   // Kiểm tra token để xác định trạng thái đăng nhập
@@ -53,7 +55,16 @@ const AppRouter = () => {
 
         <Route path="/payment/success" element={<PaymentSuccessPage />} />
         <Route path="/payment/cancel" element={<PaymentCancelPage />} />
-      </Route>
+
+        <Route 
+        path="/profile" 
+        element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />} 
+        />
+        <Route 
+            path="/orders" 
+            element={isAuthenticated ? <OrderHistoryPage /> : <Navigate to="/login" />} 
+        />
+        </Route>
 
       {/* Catch all - Điều hướng trang 404 về trang chủ */}
       <Route path="*" element={<Navigate to="/" />} />

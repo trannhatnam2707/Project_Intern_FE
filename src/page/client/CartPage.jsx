@@ -3,34 +3,31 @@ import { Row, Col, Typography, message, Modal, Result, Button } from 'antd';
 import { ShoppingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
-// Import Components Cart
 import CartList from '../../components/cart/CartList';
 import CartSummary from '../../components/cart/CartSummary';
 
-// Import Utils & Services
 import { getCart, updateCartQuantity, removeFromCart, clearCart } from '../../utils/cart';
 import { createOrder } from '../../services/order';
+// 👇 Đảm bảo đã import hàm này
+import { createPaymentUrl } from '../../services/payment';
 
 const { Title } = Typography;
 
 const CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]); // State lưu danh sách ID sản phẩm được tick chọn
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Load giỏ hàng từ LocalStorage
   useEffect(() => {
     setCartItems(getCart());
   }, []);
 
-  // Xử lý thay đổi số lượng
   const handleQuantityChange = (productId, newQuantity) => {
     const updatedCart = updateCartQuantity(productId, newQuantity);
     setCartItems(updatedCart);
   };
 
-  // Xử lý xóa sản phẩm
   const handleRemove = (productId) => {
     Modal.confirm({
       title: 'Xác nhận xóa',
@@ -41,22 +38,19 @@ const CartPage = () => {
       onOk: () => {
         const updatedCart = removeFromCart(productId);
         setCartItems(updatedCart);
-        // Xóa luôn khỏi danh sách đang chọn (nếu có)
         setSelectedRowKeys(prev => prev.filter(id => id !== productId));
         message.success('Đã xóa sản phẩm');
       },
     });
   };
 
-  // Hàm khi người dùng tích vào checkbox
   const onSelectionChange = (newSelectedRowKeys) => {
     setSelectedRowKeys(newSelectedRowKeys);
   };
 
-  // Lọc ra các sản phẩm ĐƯỢC CHỌN để truyền sang CartSummary tính tiền
   const selectedItems = cartItems.filter(item => selectedRowKeys.includes(item.ProductID));
 
-  // Xử lý Thanh toán
+  // 👇 HÀM NÀY CẦN SỬA LẠI ĐỂ GỌI STRIPE
   const handleCheckout = async () => {
     const token = localStorage.getItem("access_token");
     if (!token) {
@@ -72,28 +66,30 @@ const CartPage = () => {
 
     try {
         setLoading(true);
-        // Chuẩn bị dữ liệu gửi lên API (chỉ gửi những món đã chọn)
+        // 1. Tạo đơn hàng (Status: Pending)
         const itemsPayload = selectedItems.map(item => ({
             product_id: item.ProductID,
             quantity: item.quantity
         }));
 
-        // Gọi API tạo đơn hàng
-        await createOrder(itemsPayload);
+        const orderRes = await createOrder(itemsPayload);
         
-        // Thành công: Chỉ xóa những món ĐÃ MUA khỏi giỏ hàng
-        selectedItems.forEach(item => removeFromCart(item.ProductID));
-        
-        // Cập nhật lại giao diện (giữ lại các món chưa mua)
-        setCartItems(prev => prev.filter(item => !selectedRowKeys.includes(item.ProductID)));
-        setSelectedRowKeys([]); // Reset lựa chọn
-        
-        Modal.success({
-            title: 'Đặt hàng thành công!',
-            content: 'Đơn hàng của bạn đang được xử lý.',
-            okText: 'Tiếp tục mua sắm',
-            onOk: () => navigate('/'),
-        });
+        // 2. Nếu tạo đơn thành công -> Gọi API lấy link Stripe
+        if (orderRes.order_id) {
+            const paymentRes = await createPaymentUrl(orderRes.order_id);
+            
+            if (paymentRes.checkout_url) {
+                // Lưu tạm các ID sản phẩm đã mua vào Session Storage
+                // Để tí nữa thanh toán xong quay lại trang Success mới xóa khỏi giỏ
+                const itemsToRemove = selectedItems.map(item => item.ProductID);
+                sessionStorage.setItem('pending_payment_items', JSON.stringify(itemsToRemove));
+
+                // 🚀 CHUYỂN HƯỚNG SANG STRIPE NGAY LẬP TỨC
+                window.location.href = paymentRes.checkout_url; 
+            } else {
+                message.error("Không lấy được link thanh toán!");
+            }
+        }
 
     } catch (error) {
         console.error(error);
@@ -111,19 +107,15 @@ const CartPage = () => {
 
       {cartItems.length > 0 ? (
         <Row gutter={24}>
-          {/* Cột trái: Danh sách sản phẩm (Có checkbox) */}
           <Col xs={24} lg={16}>
             <CartList 
                 cartItems={cartItems} 
                 onQuantityChange={handleQuantityChange} 
                 onRemove={handleRemove}
-                // Truyền props cho checkbox
                 selectedRowKeys={selectedRowKeys}
                 onSelectionChange={onSelectionChange}
             />
           </Col>
-          
-          {/* Cột phải: Tổng tiền (Chỉ tính những món đã chọn) */}
           <Col xs={24} lg={8}>
             <CartSummary 
                 selectedItems={selectedItems} 

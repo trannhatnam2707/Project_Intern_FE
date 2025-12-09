@@ -3,64 +3,46 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Row, Col, Image, Typography, Button, Rate, Tag, InputNumber, Divider, Space, message, Spin, Card, Breadcrumb, Modal } from 'antd';
 import { ShoppingCartOutlined, CheckCircleOutlined, HomeOutlined, ThunderboltOutlined } from '@ant-design/icons';
 
-// Import Services & Utils
 import { getProductById } from '../../services/product';
 import { getReviewsByProduct } from '../../services/reviews';
 import { createOrder } from '../../services/order';
+// 👇 Đảm bảo import hàm này
+import { createPaymentUrl } from '../../services/payment'; 
 import { formatPrice } from '../../utils/format';
-import { addToCart } from '../../utils/cart'; // Hàm lưu LocalStorage
-
-// Import Component con
+import { addToCart } from '../../utils/cart';
 import ProductReviews from '../../components/product/ProductReviews';
 
 const { Title, Paragraph, Text } = Typography;
 
 const ProductDetailPage = () => {
+  // ... (Phần state và useEffect giữ nguyên) ...
   const { id } = useParams();
   const navigate = useNavigate();
-  
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [avgRating, setAvgRating] = useState(0);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-
   const isAuthenticated = !!(localStorage.getItem("access_token"));
 
   useEffect(() => {
-    // 1. Luôn cuộn lên đầu trang khi ID thay đổi
     window.scrollTo(0, 0);
-
     const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [productData, reviewsData] = await Promise.all([
-            getProductById(id),
-            getReviewsByProduct(id)
-        ]);
-
-        setProduct(productData);
-        setReviews(reviewsData);
-
-        // Tính điểm đánh giá trung bình
-        if (reviewsData.length > 0) {
-            const total = reviewsData.reduce((acc, curr) => acc + curr.Rating, 0);
-            setAvgRating(total / reviewsData.length);
-        } else {
-            setAvgRating(5);
-        }
-      } catch (error) {
-        console.error("Lỗi:", error);
-        message.error("Lỗi tải dữ liệu sản phẩm!");
-      } finally {
-        setLoading(false);
-      }
+        // ... (Giữ nguyên logic fetch data) ...
+        try {
+          setLoading(true);
+          const [productData, reviewsData] = await Promise.all([getProductById(id), getReviewsByProduct(id)]);
+          setProduct(productData);
+          setReviews(reviewsData);
+          if (reviewsData.length > 0) {
+              const total = reviewsData.reduce((acc, curr) => acc + curr.Rating, 0);
+              setAvgRating(total / reviewsData.length);
+          } else { setAvgRating(5); }
+        } catch (error) { message.error("Lỗi tải dữ liệu!"); } finally { setLoading(false); }
     };
-
     if (id) fetchData();
   }, [id]);
 
-  // Xử lý nút "Thêm vào giỏ" -> Lưu vào LocalStorage
   const handleAddToCart = () => {
     if (quantity > product.Stock) {
         message.warning("Số lượng yêu cầu vượt quá tồn kho!");
@@ -70,7 +52,7 @@ const ProductDetailPage = () => {
     message.success(`Đã thêm ${quantity} sản phẩm vào giỏ!`);
   };
 
-  // Xử lý nút "Mua ngay" -> Gọi API trực tiếp (Bỏ qua giỏ hàng)
+  // 👇 HÀM NÀY CẦN SỬA LẠI ĐỂ GỌI STRIPE
   const handleBuyNow = () => {
     if (!isAuthenticated) {
         message.warning("Vui lòng đăng nhập để mua hàng!");
@@ -96,19 +78,24 @@ const ProductDetailPage = () => {
                 </div>
             </div>
         ),
-        okText: 'Đặt hàng ngay',
+        okText: 'Thanh toán ngay',
         cancelText: 'Hủy',
         onOk: async () => {
             try {
-                // Gọi API tạo đơn hàng trực tiếp
-                await createOrder([{ product_id: product.ProductID, quantity: quantity }]);
+                // 1. Tạo đơn hàng
+                const orderRes = await createOrder([{ product_id: product.ProductID, quantity: quantity }]);
                 
-                Modal.success({
-                    title: 'Đặt hàng thành công!',
-                    content: 'Đơn hàng của bạn đã được tạo thành công.',
-                    okText: 'Xem đơn hàng',
-                    onOk: () => navigate('/orders'), // Chuyển sang trang lịch sử đơn hàng
-                });
+                // 2. Nếu có Order ID -> Tạo link thanh toán
+                if (orderRes.order_id) {
+                    const paymentRes = await createPaymentUrl(orderRes.order_id);
+                    
+                    if (paymentRes.checkout_url) {
+                        // 🚀 CHUYỂN HƯỚNG SANG STRIPE
+                        window.location.href = paymentRes.checkout_url;
+                    } else {
+                        message.error("Lỗi: Không tạo được link thanh toán.");
+                    }
+                }
             } catch (error) {
                 message.error("Đặt hàng thất bại: " + (error.response?.data?.detail || "Lỗi hệ thống"));
             }
@@ -116,24 +103,21 @@ const ProductDetailPage = () => {
     });
   };
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '100px 0' }}><Spin size="large" /></div>;
+  if (loading) return <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />;
   if (!product) return null;
 
   return (
     <div style={{ paddingBottom: '40px' }}>
-      {/* Breadcrumb */}
-      <Breadcrumb style={{ margin: '16px 0' }} items={[{ href: '/', title: <HomeOutlined /> }, { title: 'Sản phẩm' }, { title: product.ProductName }]} />
-
+        {/* ... (Phần UI giữ nguyên như cũ) ... */}
+        <Breadcrumb style={{ margin: '16px 0' }} items={[{ href: '/', title: <HomeOutlined /> }, { title: 'Sản phẩm' }, { title: product.ProductName }]} />
       <Card style={{ borderRadius: '12px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <Row gutter={[48, 32]}>
-          {/* Cột trái: Ảnh */}
           <Col xs={24} md={10}>
             <div style={{ border: '1px solid #f0f0f0', borderRadius: '8px', padding: '20px', display: 'flex', justifyContent: 'center', backgroundColor: '#fff' }}>
               <Image src={product.ImageURL || "https://via.placeholder.com/500"} style={{ maxHeight: '400px', objectFit: 'contain' }} />
             </div>
           </Col>
 
-          {/* Cột phải: Thông tin */}
           <Col xs={24} md={14}>
             <Title level={2} style={{ marginBottom: 10 }}>{product.ProductName}</Title>
             
@@ -157,7 +141,6 @@ const ProductDetailPage = () => {
 
             <Divider />
 
-            {/* Nút Mua & Số lượng */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <Space>
                     <Text strong>Số lượng:</Text>
@@ -188,14 +171,7 @@ const ProductDetailPage = () => {
         </Row>
       </Card>
 
-      {/* Component Reviews */}
-      <ProductReviews 
-        productId={id} 
-        reviews={reviews} 
-        setReviews={setReviews} 
-        setAvgRating={setAvgRating} 
-        isAuthenticated={isAuthenticated} 
-      />
+      <ProductReviews productId={id} reviews={reviews} setReviews={setReviews} setAvgRating={setAvgRating} isAuthenticated={isAuthenticated} />
     </div>
   );
 };
