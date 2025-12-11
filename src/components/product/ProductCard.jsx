@@ -11,9 +11,21 @@ const ProductCard = ({ product }) => {
   const navigate = useNavigate();
 
   const handleAddToCart = (e) => {
-    e.stopPropagation(); // Chặn sự kiện click lan ra ngoài thẻ card
+    e.stopPropagation(); 
     addToCart(product, 1);
     message.success(`Đã thêm ${product.ProductName} vào giỏ!`);
+  };
+
+  // Logic hiển thị Marketing Content
+  const marketingText = product.MarketingContent 
+    ? product.MarketingContent 
+    : "Sản phẩm công nghệ chính hãng chất lượng cao.";
+
+  // 👇 HÀM CẮT CHUỖI (TRUNCATE) THỦ CÔNG
+  // Nếu dài hơn 70 ký tự thì cắt và thêm ...
+  const truncate = (str, max) => {
+      if (!str) return '';
+      return str.length > max ? str.substring(0, max) + '...' : str;
   };
 
   return (
@@ -21,24 +33,13 @@ const ProductCard = ({ product }) => {
       hoverable
       style={{ 
         height: '100%', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        borderRadius: '12px', 
-        overflow: 'hidden', 
-        border: '1px solid #f0f0f0',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+        display: 'flex', flexDirection: 'column', 
+        borderRadius: '12px', overflow: 'hidden', 
+        border: '1px solid #f0f0f0', boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
       }}
       bodyStyle={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column' }}
       cover={
-        <div style={{ 
-          height: 180, 
-          padding: '15px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          background: '#fff',
-          borderBottom: '1px solid #f0f0f0'
-        }}>
+        <div style={{ height: 180, padding: '15px', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
           <Image
             alt={product.ProductName}
             src={product.ImageURL || "https://via.placeholder.com/300x300?text=No+Image"} 
@@ -52,29 +53,14 @@ const ProductCard = ({ product }) => {
         </div>
       }
       actions={[
-        <Button key="cart" type="text" icon={<ShoppingCartOutlined />} onClick={handleAddToCart}>
-          Thêm giỏ
-        </Button>,
-        <Button key="view" type="text" icon={<EyeOutlined />} onClick={() => navigate(`/product/${product.ProductID}`)}>
-          Chi tiết
-        </Button>
+        <Button key="cart" type="text" icon={<ShoppingCartOutlined />} onClick={handleAddToCart}>Thêm giỏ</Button>,
+        <Button key="view" type="text" icon={<EyeOutlined />} onClick={() => navigate(`/product/${product.ProductID}`)}>Chi tiết</Button>
       ]}
     >
       <div style={{ marginBottom: '8px', minHeight: '44px' }}>
         <h3 
           onClick={() => navigate(`/product/${product.ProductID}`)}
-          style={{ 
-            fontSize: '15px', 
-            fontWeight: '600', 
-            margin: 0, 
-            lineHeight: '1.4', 
-            overflow: 'hidden', 
-            display: '-webkit-box', 
-            WebkitLineClamp: 2, 
-            WebkitBoxOrient: 'vertical', 
-            cursor: 'pointer', 
-            color: '#262626' 
-          }}
+          style={{ fontSize: '15px', fontWeight: '600', margin: 0, lineHeight: '1.4', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', cursor: 'pointer', color: '#262626' }}
           onMouseOver={(e) => e.currentTarget.style.color = '#1890ff'}
           onMouseOut={(e) => e.currentTarget.style.color = '#262626'}
         >
@@ -82,15 +68,16 @@ const ProductCard = ({ product }) => {
         </h3>
       </div>
 
-      <div style={{ marginBottom: '12px', flex: 1 }}>
-        <Text type="secondary" style={{ fontSize: '13px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: '40px' }}>
-          {product.MarketingContent || "Sản phẩm công nghệ chính hãng chất lượng cao."}
+      {/* 👇 HIỂN THỊ MARKETING CONTENT ĐÃ CẮT GỌN */}
+      <div style={{ marginBottom: '12px', flex: 1, minHeight: '40px' }}>
+        <Text type="secondary" style={{ fontSize: '13px', lineHeight: '1.5' }}>
+          {truncate(marketingText, 70)}
         </Text>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
         <Text type="danger" strong style={{ fontSize: '16px' }}>{formatPrice(product.Price)}</Text>
-        {product.Stock > 0 ? <Tag color="green" style={{marginRight: 0}}>Sẵn hàng</Tag> : <Tag color="red" style={{marginRight: 0}}>Hết hàng</Tag>}
+        {product.Stock > 0 ? <Tag color="green">Sẵn hàng</Tag> : <Tag color="red">Hết hàng</Tag>}
       </div>
     </Card>
   );
