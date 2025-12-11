@@ -90,6 +90,4 @@ export const logout = () => {
     sessionStorage.removeItem("access_token");
     sessionStorage.removeItem("refresh_token");
     sessionStorage.removeItem("user_info");
-
-    window.location.href = "/login"
 };
