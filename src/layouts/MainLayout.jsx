@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Layout } from 'antd';
 import AppHeader from '../components/layout/Header'; // Import Header
 import AppFooter from '../components/layout/Footer'; // Import Footer
+import ChatBox from '../components/common/ChatBox';
 
 const { Content } = Layout;
 
@@ -22,6 +23,8 @@ const MainLayout = () => {
 
       {/* 3. Footer */}
       <AppFooter />
+      <ChatBox/>
+
     </Layout>
   );
 };

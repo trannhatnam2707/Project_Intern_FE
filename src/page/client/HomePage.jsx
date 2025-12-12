@@ -5,6 +5,7 @@ import {
     MobileOutlined, LaptopOutlined, TabletOutlined, DesktopOutlined, 
     AudioOutlined, CameraOutlined, PrinterOutlined
 } from '@ant-design/icons';
+import { MdWatch } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
 
 import { getAllProducts } from '../../services/product';
@@ -22,7 +23,8 @@ const banners = [
 const getCategoryIcon = (categoryName) => {
     const name = categoryName ? categoryName.toLowerCase() : "";
     if (name.includes('điện thoại') || name.includes('phone')) return <MobileOutlined />;
-    if (name.includes('laptop') || name.includes('máy tính')) return <LaptopOutlined />
+    if (name.includes('máy tính') || name.includes('laptop')) return <LaptopOutlined />;
+    if (name.includes('đồng hồ') || name.includes('Watch')) return <MdWatch/>
     return <AppstoreOutlined />;
 };
 
