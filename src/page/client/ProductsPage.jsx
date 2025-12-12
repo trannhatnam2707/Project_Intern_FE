@@ -19,7 +19,7 @@ const ProductsPage = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const pageSize = 12;
+  const pageSize = 8;
 
   // Reset về trang 1 nếu điều kiện lọc thay đổi
   useEffect(() => {
