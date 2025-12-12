@@ -37,18 +37,29 @@ const ChatBox = () => {
     if (!inputValue.trim()) return;
 
     const userMessage = inputValue;
-    
-    // 1. Hiển thị tin nhắn user
+
+    // 1. Chuẩn bị dữ liệu Lịch sử (History) để gửi đi
+    // Lấy danh sách tin nhắn hiện tại (trừ tin nhắn vừa nhập) để làm ngữ cảnh
+    const historyPayload = messages.map(msg => ({
+        sender: msg.sender,
+        text: msg.text
+    }));
+
+    // 2. Hiển thị tin nhắn User ngay lập tức (UI Optimistic)
     setMessages(prev => [...prev, { sender: 'user', text: userMessage }]);
     setInputValue('');
     setIsLoading(true);
 
     try {
-      const res = await api.post('/api/chat/', { message: userMessage });
+      // 3. Gọi API: Gửi cả câu hỏi mới (message) + Lịch sử cũ (history)
+      const res = await api.post('/api/chat/', { 
+          message: userMessage,
+          history: historyPayload 
+      });
       
-      // 👇 SỬA ĐOẠN NÀY (Xử lý an toàn cho axios)
-      // Kiểm tra xem res.data có tồn tại không, nếu không thì lấy trực tiếp res
-      const replyText = res.data?.reply || res.reply || "Xin lỗi, tôi không nhận được câu trả lời.";
+      // 4. Xử lý dữ liệu trả về an toàn (Tránh lỗi trắng trang)
+      // Nếu axios đã intercept data thì lấy res.reply, chưa thì lấy res.data.reply
+      const replyText = res.data?.reply || res.reply || "Xin lỗi, tôi không nhận được phản hồi.";
 
       setMessages(prev => [...prev, { sender: 'bot', text: replyText }]);
       
@@ -56,7 +67,7 @@ const ChatBox = () => {
       console.error("Lỗi chat:", error);
       setMessages(prev => [...prev, { 
         sender: 'bot', 
-        text: 'Xin lỗi, kết nối đang chập chờn. Bạn thử lại sau nhé! 🔌' 
+        text: 'Xin lỗi, kết nối với não bộ AI đang bị gián đoạn. Bạn thử lại sau chút nhé! 🤯' 
       }]);
     } finally {
       setIsLoading(false);
